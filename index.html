@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>llm 생성 문제 → Blooket 변환기</title>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --primary: #0bc2cf;
+    --primary-hover: #09a8b4;
+    --danger: #ef4444;
+    --success: #10b981;
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --border: #e2e8f0;
+    --text: #1e293b;
+    --text-muted: #64748b;
+    --radius: 12px;
+    --blooket: #0bc2cf;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px 20px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    color: var(--blooket);
+  }
+
+  header .subtitle {
+    color: var(--text-muted);
+    font-size: 15px;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+
+  .card h2 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card h2 .badge {
+    background: var(--blooket);
+    color: white;
+    font-size: 12px;
+    padding: 2px 10px;
+    border-radius: 100px;
+    font-weight: 500;
+  }
+
+  textarea#inputText {
+    width: 100%;
+    min-height: 260px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    font-size: 14px;
+    font-family: 'Pretendard', monospace;
+    line-height: 1.7;
+    resize: vertical;
+    transition: border-color 0.2s;
+    color: var(--text);
+  }
+
+  textarea#inputText:focus {
+    outline: none;
+    border-color: var(--blooket);
+  }
+
+  textarea#inputText::placeholder { color: #94a3b8; }
+
+  .settings-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+
+  .settings-row label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .settings-row input[type="number"] {
+    width: 80px;
+    padding: 6px 10px;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    text-align: center;
+    color: var(--text);
+  }
+
+  .settings-row input[type="number"]:focus {
+    outline: none;
+    border-color: var(--blooket);
+  }
+
+  .settings-row .hint {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+
+  button {
+    padding: 10px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn-primary {
+    background: var(--blooket);
+    color: white;
+  }
+  .btn-primary:hover { background: var(--primary-hover); }
+
+  .btn-success {
+    background: var(--success);
+    color: white;
+  }
+  .btn-success:hover { background: #059669; }
+
+  .btn-blooket {
+    background: var(--blooket);
+    color: white;
+  }
+  .btn-blooket:hover { background: var(--primary-hover); }
+
+  .btn-outline {
+    background: white;
+    color: var(--text);
+    border: 2px solid var(--border);
+  }
+  .btn-outline:hover { border-color: var(--blooket); color: var(--blooket); }
+
+  .stats {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .stat {
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+
+  .stat strong {
+    color: var(--blooket);
+    font-size: 20px;
+    margin-right: 4px;
+  }
+
+  .stat.warn strong { color: var(--danger); }
+
+  .warning-box {
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #92400e;
+    margin-bottom: 16px;
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+    margin-top: 12px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  th {
+    background: #f1f5f9;
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+    white-space: nowrap;
+    border-bottom: 2px solid var(--border);
+    position: sticky;
+    top: 0;
+  }
+
+  td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  tr:hover td { background: #f8fafc; }
+
+  td input, td textarea.cell-edit {
+    width: 100%;
+    border: 1px solid transparent;
+    background: transparent;
+    padding: 4px 6px;
+    font-size: 13px;
+    font-family: inherit;
+    border-radius: 4px;
+    color: var(--text);
+  }
+
+  td input:focus, td textarea.cell-edit:focus {
+    outline: none;
+    border-color: var(--blooket);
+    background: white;
+  }
+
+  td textarea.cell-edit {
+    min-height: 60px;
+    resize: vertical;
+    line-height: 1.4;
+  }
+
+  .answer-input {
+    text-align: center;
+    font-weight: 700;
+    color: var(--blooket);
+    width: 50px;
+  }
+
+  .time-input {
+    text-align: center;
+    width: 60px;
+  }
+
+  .row-num {
+    text-align: center;
+    color: var(--text-muted);
+    font-weight: 600;
+    width: 40px;
+  }
+
+  .delete-btn {
+    background: none;
+    border: none;
+    color: var(--danger);
+    cursor: pointer;
+    padding: 4px;
+    font-size: 16px;
+    opacity: 0.5;
+    transition: opacity 0.2s;
+  }
+  .delete-btn:hover { opacity: 1; }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+  }
+
+  .empty-state p {
+    font-size: 15px;
+    margin-bottom: 8px;
+  }
+
+  .supported-formats {
+    margin-top: 12px;
+    padding: 16px;
+    background: #f1f5f9;
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.8;
+  }
+
+  .blooket-info {
+    margin-top: 12px;
+    padding: 12px 16px;
+    background: #e0f7fa;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #006064;
+    line-height: 1.6;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: #1e293b;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 1000;
+  }
+
+  .toast.show {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  .format-hint {
+    display: flex;
+    gap: 12px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+
+  .format-tag {
+    font-size: 12px;
+    padding: 4px 12px;
+    background: #e0f7fa;
+    color: #006064;
+    border-radius: 100px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+  }
+
+  .format-tag:hover {
+    background: #b2ebf2;
+    border-color: var(--blooket);
+  }
+
+  @media (max-width: 768px) {
+    .container { padding: 16px 12px; }
+    header h1 { font-size: 22px; }
+    .stats { gap: 16px; }
+    .actions { flex-direction: column; }
+    button { width: 100%; justify-content: center; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>llm 생성 문제 → Blooket 변환기</h1>
+    <p class="subtitle">LLM이 생성한 문제를 붙여넣으면 Blooket 가져오기용 csv로 변환합니다</p>
+    <p class="subtitle" style="font-size:13px; margin-top:4px;">LLM에게 문제를 요청할 때 <strong style="color:var(--blooket);">정답도 함께 출력</strong>해달라고 하세요. (예: "정답: ③")</p>
+  </header>
+
+  <div class="card">
+    <h2>텍스트 입력</h2>
+    <textarea id="inputText" placeholder="여기에 LLM이 생성한 문제를 붙여넣으세요.
+
+예시:
+**1. 다음 빈칸에 들어갈 알맞은 단어를 고르세요.**
+> My ______ is Huy.
+
+① friend
+② name
+③ country
+④ food
+
+**정답: ② name**"></textarea>
+
+    <div class="format-hint" id="formatHint"></div>
+
+    <div class="settings-row">
+      <label>기본 시간 제한:</label>
+      <input type="number" id="defaultTime" value="20" min="5" max="300" step="5">
+      <span class="hint">초 (5~300, Blooket 최대 300초)</span>
+    </div>
+
+    <div class="actions">
+      <button class="btn-primary" onclick="parseQuestions()">파싱하기</button>
+      <button class="btn-outline" onclick="clearInput()">초기화</button>
+    </div>
+  </div>
+
+  <div class="card" id="resultCard" style="display:none;">
+    <h2>
+      파싱 결과
+      <span class="badge" id="countBadge">0문제</span>
+    </h2>
+    <div class="stats" id="stats"></div>
+    <div id="warningArea"></div>
+    <div class="actions" style="margin-top:0; margin-bottom:16px;">
+      <button class="btn-blooket" onclick="downloadCSV()">CSV 다운로드</button>
+      <button class="btn-outline" onclick="downloadXLSX()">XLSX 다운로드</button>
+      <button class="btn-outline" onclick="addEmptyRow()">빈 행 추가</button>
+      <button class="btn-outline" onclick="applyDefaultTime()">시간 일괄 적용</button>
+    </div>
+    <div class="table-wrap">
+      <table id="resultTable">
+        <thead>
+          <tr>
+            <th>번호</th>
+            <th style="min-width:220px;">문제</th>
+            <th style="min-width:110px;">보기1</th>
+            <th style="min-width:110px;">보기2</th>
+            <th style="min-width:110px;">보기3</th>
+            <th style="min-width:110px;">보기4</th>
+            <th>시간(초)</th>
+            <th>정답</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="resultBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card" id="emptyState">
+    <div class="empty-state">
+      <p>위 입력란에 문제를 붙여넣고 <strong>파싱하기</strong>를 눌러주세요</p>
+      <div class="supported-formats">
+        <strong>지원하는 형식:</strong><br>
+        번호: 1. / 1) / Q1 / 문제1 / **1.** 등<br>
+        선다형 보기: A) B) C) / ① ② ③ / 1) 2) 3) / (가)(나)(다) 등<br>
+        단답형: 보기 없이 정답만 있으면 자동 인식<br>
+        정답: 정답: A / 답: ③ / **정답: ② name** / 정답: from 등<br>
+        마크다운 볼드, 인용(>), 구분선(---), 해설 자동 제거
+      </div>
+      <div class="blooket-info">
+        <strong>Blooket 형식:</strong> 선다형 보기 최대 4개 | 단답형 지원 | 시간 제한 5~300초
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var parsedData = [];
+
+var SAMPLES = {
+  abc: '1. 다음 중 HTTP 상태 코드 404의 의미는?\nA) 서버 오류\nB) 권한 없음\nC) 페이지를 찾을 수 없음\nD) 요청 성공\n정답: C\n\n2. 객체지향 프로그래밍의 4대 특성이 아닌 것은?\nA) 캡슐화\nB) 상속\nC) 컴파일\nD) 다형성\n정답: C',
+
+  circled: '1. TCP/IP 모델의 계층이 아닌 것은?\n\u2460 응용 계층\n\u2461 전송 계층\n\u2462 세션 계층\n\u2463 네트워크 계층\n정답: \u2462\n\n2. 데이터베이스 정규화의 목적으로 가장 적절한 것은?\n\u2460 데이터 중복 최소화\n\u2461 검색 속도 향상\n\u2462 저장 공간 확대\n\u2463 보안 강화\n정답: \u2460',
+
+  markdown: '**1. 다음 빈칸에 공통으로 들어갈 알맞은 단어를 고르세요.**\n> \u2022 I am _______ Vietnam.\n> \u2022 Where are you _______?\n\n\u2460 to\n\u2461 in\n\u2462 at\n\u2463 from\n\n**정답: \u2463 from**\n**해설:** 출신 국가를 나타내거나 물어볼 때는 from을 사용합니다.\n\n---\n\n**2. 다음 우리말 뜻에 알맞은 영어 문장을 고르세요.**\n> 나는 야구를 잘해.\n\n\u2460 I am from baseball.\n\u2461 I like baseball.\n\u2462 I can play baseball well.\n\u2463 I play basketball well.\n\n**정답: \u2462 I can play baseball well.**\n**해설:** I can + 동사원형 + well 형태를 사용합니다.\n\n---\n\n**3. 다음 중 어법상 어색한 문장을 고르세요.**\n> \u2460 I am from Vietnam.\n> \u2461 I can play basketball well.\n> \u2462 My name is Mia.\n> \u2463 I likes hot dogs.\n\n**정답: \u2463 I likes hot dogs.**',
+
+  short_answer: '1. I am _______ Vietnam. \uBE48\uCE78\uC5D0 \uC54C\uB9DE\uC740 \uB2E8\uC5B4\uB97C \uC4F0\uC138\uC694.\n\uC815\uB2F5: from\n\n2. "\uD568\uAED8"\uB97C \uC601\uC5B4\uB85C \uC4F0\uC138\uC694.\n\uC815\uB2F5: together\n\n3. My ______ is Huy. \uBE48\uCE78\uC5D0 \uC54C\uB9DE\uC740 \uB2E8\uC5B4\uB97C \uC4F0\uC138\uC694.\n\uC815\uB2F5: name\n\n4. \uB2E4\uC74C \uC911 \uC62C\uBC14\uB978 \uBB38\uC7A5\uC744 \uACE0\uB974\uC138\uC694.\nA) I likes hot dogs.\nB) I like hot dogs.\nC) I am like hot dogs.\nD) I liking hot dogs.\n\uC815\uB2F5: B'
+};
+
+// 샘플 태그 생성
+(function initFormatHints() {
+  var container = document.getElementById('formatHint');
+  var tags = [
+    { key: 'abc', label: 'A/B/C/D 형식' },
+    { key: 'circled', label: '\u2460\u2461\u2462\u2463 형식' },
+    { key: 'markdown', label: '마크다운 (LLM)' },
+    { key: 'short_answer', label: '단답형 + 선다형 혼합' }
+  ];
+  tags.forEach(function(t) {
+    var span = document.createElement('span');
+    span.className = 'format-tag';
+    span.textContent = t.label;
+    span.addEventListener('click', function() {
+      document.getElementById('inputText').value = SAMPLES[t.key] || '';
+    });
+    container.appendChild(span);
+  });
+})();
+
+// 보기 마커 패턴
+var CHOICE_PATTERNS = [
+  { regex: /^[\s]*(?:\(?([A-E])\)?[\.\)]\s*)(.*)/i, type: 'alpha',
+    indexFn: function(m) { return m[1].toUpperCase().charCodeAt(0) - 65; },
+    textFn: function(m) { return m[2].trim(); } },
+  { regex: /^[\s]*([\u2460\u2461\u2462\u2463\u2464])\s*(.*)/, type: 'circled',
+    indexFn: function(m) { return '\u2460\u2461\u2462\u2463\u2464'.indexOf(m[1]); },
+    textFn: function(m) { return m[2].trim(); } },
+  { regex: /^[\s]*([1-5])[\.\)]\s*(.*)/, type: 'num',
+    indexFn: function(m) { return parseInt(m[1]) - 1; },
+    textFn: function(m) { return m[2].trim(); } },
+  { regex: /^[\s]*\(([\uAC00\uB098\uB2E4\uB77C\uB9C8])\)\s*(.*)/, type: 'korean_paren',
+    indexFn: function(m) { return '\uAC00\uB098\uB2E4\uB77C\uB9C8'.indexOf(m[1]); },
+    textFn: function(m) { return m[2].trim(); } },
+  { regex: /^[\s]*([\u3131\u3134\u3137\u3139\u3141])[\.\)]\s*(.*)/, type: 'korean_consonant',
+    indexFn: function(m) { return '\u3131\u3134\u3137\u3139\u3141'.indexOf(m[1]); },
+    textFn: function(m) { return m[2].trim(); } }
+];
+
+var ANSWER_REGEX = /^(?:정답|답|답안|answer|correct)\s*[:：]\s*(.+?)\s*$/i;
+var EXPLANATION_REGEX = /^(?:해설|풀이|설명|explanation)\s*[:：]/i;
+var QUESTION_NUM_REGEX = /^(?:(?:문제|Q|q|#|【)\s*)?(\d{1,3})[\s]*[.\)】:\s]/;
+
+function preprocessLine(line) {
+  var s = line;
+  s = s.replace(/^[\s]*>\s?/, '');
+  s = s.replace(/\*\*/g, '');
+  s = s.replace(/(^|\s)\*(\S)/g, '$1$2').replace(/(\S)\*(\s|$)/g, '$1$2');
+  s = s.replace(/^#{1,6}\s+/, '');
+  s = s.replace(/\$\\rightarrow\$/g, '\u2192');
+  s = s.replace(/\$[^$]*\$/g, '');
+  return s;
+}
+
+function normalizeAnswer(answerText) {
+  var t = answerText.trim();
+  var circledMatch = t.match(/^([\u2460\u2461\u2462\u2463\u2464])/);
+  if (circledMatch) return '\u2460\u2461\u2462\u2463\u2464'.indexOf(circledMatch[1]) + 1;
+  var korParenMatch = t.match(/^\(([\uAC00\uB098\uB2E4\uB77C\uB9C8])\)/);
+  if (korParenMatch) return '\uAC00\uB098\uB2E4\uB77C\uB9C8'.indexOf(korParenMatch[1]) + 1;
+  var alphaMatch = t.match(/^([A-Ea-e])(?:\)|\.|$|\s)/);
+  if (alphaMatch) return alphaMatch[1].toUpperCase().charCodeAt(0) - 64;
+  var consMatch = t.match(/^([\u3131\u3134\u3137\u3139\u3141])/);
+  if (consMatch) return '\u3131\u3134\u3137\u3139\u3141'.indexOf(consMatch[1]) + 1;
+  var numMatch = t.match(/^([1-5])(?:\s|$|\))/);
+  if (numMatch) return parseInt(numMatch[1]);
+  if (/^[1-5]$/.test(t)) return parseInt(t);
+  if (/^[A-Ea-e]$/.test(t)) return t.toUpperCase().charCodeAt(0) - 64;
+  return t;
+}
+
+function parseQuestions() {
+  var text = document.getElementById('inputText').value.trim();
+  if (!text) { showToast('텍스트를 입력해주세요'); return; }
+
+  var defaultTime = parseInt(document.getElementById('defaultTime').value) || 20;
+  var rawLines = text.split('\n');
+  var questions = [];
+  var currentQ = null;
+
+  for (var i = 0; i < rawLines.length; i++) {
+    var raw = rawLines[i];
+    if (/^\s*[-=]{3,}\s*$/.test(raw)) continue;
+    var trimmed = preprocessLine(raw).trim();
+    if (!trimmed) continue;
+    if (EXPLANATION_REGEX.test(trimmed)) continue;
+    if (/^[\[【「].*(?:문제|연습|평가|단원).*[\]】」]\s*$/.test(trimmed)) continue;
+
+    var answerMatch = trimmed.match(ANSWER_REGEX);
+    if (answerMatch && currentQ) { currentQ.answerRaw = answerMatch[1].trim(); continue; }
+
+    var qMatch = trimmed.match(QUESTION_NUM_REGEX);
+    if (qMatch) {
+      if (currentQ) questions.push(currentQ);
+      var afterNum = trimmed.replace(QUESTION_NUM_REGEX, '').trim();
+      currentQ = { num: parseInt(qMatch[1]), question: afterNum, choices: [], answerRaw: '', choiceType: null };
+      continue;
+    }
+
+    var choiceMatched = false;
+    for (var j = 0; j < CHOICE_PATTERNS.length; j++) {
+      var cp = CHOICE_PATTERNS[j];
+      var cm = trimmed.match(cp.regex);
+      if (cm) {
+        if (cp.type === 'num' && !currentQ) break;
+        if (cp.type === 'num' && currentQ && currentQ.choices.length === 0 && parseInt(cm[1]) > 1) break;
+        if (currentQ) { currentQ.choices[cp.indexFn(cm)] = cp.textFn(cm); currentQ.choiceType = cp.type; }
+        choiceMatched = true; break;
+      }
+    }
+    if (choiceMatched) continue;
+
+    if (currentQ && currentQ.choices.length === 0) {
+      if (/^[\u2022\-]/.test(trimmed)) { currentQ.question += '\n' + trimmed; }
+      else { currentQ.question += ' ' + trimmed; }
+    }
+  }
+  if (currentQ) questions.push(currentQ);
+
+  if (questions.length === 0) { showToast('문제를 파싱할 수 없습니다. 형식을 확인해주세요.'); return; }
+
+  parsedData = questions.map(function(q, i) {
+    var hasChoices = q.choices.some(function(c) { return c; });
+    var isShortAnswer = !hasChoices && q.answerRaw;
+
+    if (isShortAnswer) {
+      // 단답형: 정답 텍스트를 Answer 1에 넣고, 정답 번호는 1
+      var answerText = q.answerRaw.replace(/\*+/g, '').trim();
+      // 원문자/알파벳 마커가 있으면 제거 (예: "④ from" → "from")
+      answerText = answerText.replace(/^[\u2460\u2461\u2462\u2463\u2464]\s*/, '');
+      answerText = answerText.replace(/^[A-Ea-e][\.\)]\s*/, '');
+      answerText = answerText.replace(/^\([가나다라마]\)\s*/, '');
+      return {
+        num: q.num || (i + 1),
+        question: q.question.trim(),
+        c1: answerText,
+        c2: '',
+        c3: '',
+        c4: '',
+        c5: '',
+        time: defaultTime,
+        answer: 1,
+        isShortAnswer: true
+      };
+    } else {
+      // 선다형
+      var answer = q.answerRaw ? normalizeAnswer(q.answerRaw) : '';
+      return {
+        num: q.num || (i + 1),
+        question: q.question.trim(),
+        c1: q.choices[0] || '',
+        c2: q.choices[1] || '',
+        c3: q.choices[2] || '',
+        c4: q.choices[3] || '',
+        c5: q.choices[4] || '',
+        time: defaultTime,
+        answer: answer,
+        isShortAnswer: false
+      };
+    }
+  });
+
+  renderTable();
+  showToast(parsedData.length + '개 문제를 파싱했습니다');
+}
+
+function renderTable() {
+  var tbody = document.getElementById('resultBody');
+  while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+
+  var fiveChoiceCount = 0, noAnswer = 0, fiveIsAnswer = 0, shortAnswerCount = 0, choiceCount = 0;
+  parsedData.forEach(function(d) {
+    if (d.isShortAnswer) {
+      shortAnswerCount++;
+    } else {
+      choiceCount++;
+      if (d.c5) {
+        fiveChoiceCount++;
+        if (d.answer === 5) fiveIsAnswer++;
+      }
+    }
+    if (!d.answer) noAnswer++;
+  });
+
+  // 통계
+  var statsEl = document.getElementById('stats');
+  while (statsEl.firstChild) statsEl.removeChild(statsEl.firstChild);
+
+  function addStat(num, label, isWarn) {
+    var span = document.createElement('span');
+    span.className = 'stat' + (isWarn ? ' warn' : '');
+    var strong = document.createElement('strong');
+    strong.textContent = num;
+    span.appendChild(strong);
+    span.appendChild(document.createTextNode(label));
+    statsEl.appendChild(span);
+  }
+
+  addStat(parsedData.length, '문제');
+  if (choiceCount > 0) addStat(choiceCount, '선다형');
+  if (shortAnswerCount > 0) addStat(shortAnswerCount, '단답형');
+  if (noAnswer > 0) addStat(noAnswer, '정답 없음', true);
+  if (fiveChoiceCount > 0) addStat(fiveChoiceCount, '오지선다 (4개로 축소 필요)', true);
+
+  // 오지선다 경고
+  var warningArea = document.getElementById('warningArea');
+  while (warningArea.firstChild) warningArea.removeChild(warningArea.firstChild);
+  if (fiveChoiceCount > 0) {
+    var warn = document.createElement('div');
+    warn.className = 'warning-box';
+    warn.textContent = 'Blooket은 보기 최대 4개만 지원합니다. 오지선다 문제 ' + fiveChoiceCount + '개가 감지되었습니다. ';
+    if (fiveIsAnswer > 0) {
+      warn.textContent += '이 중 ' + fiveIsAnswer + '개는 5번이 정답이므로 문제 수정이 필요합니다. ';
+    }
+    warn.textContent += 'XLSX 내보내기 시 5번 보기는 자동 제외됩니다.';
+    warningArea.appendChild(warn);
+  }
+
+  document.getElementById('countBadge').textContent = parsedData.length + '문제';
+
+  // 테이블 행
+  parsedData.forEach(function(d, i) {
+    var tr = document.createElement('tr');
+
+    // 번호
+    var tdNum = document.createElement('td');
+    tdNum.className = 'row-num';
+    tdNum.textContent = d.num;
+    tr.appendChild(tdNum);
+
+    // 문제
+    var tdQ = document.createElement('td');
+    var taQ = document.createElement('textarea');
+    taQ.className = 'cell-edit';
+    taQ.value = d.question;
+    taQ.addEventListener('change', (function(idx) {
+      return function(e) { parsedData[idx].question = e.target.value; };
+    })(i));
+    tdQ.appendChild(taQ);
+    tr.appendChild(tdQ);
+
+    // 보기 1~4
+    ['c1','c2','c3','c4'].forEach(function(key) {
+      var td = document.createElement('td');
+      var input = document.createElement('input');
+      input.type = 'text';
+      input.value = d[key];
+      input.addEventListener('change', (function(idx, k) {
+        return function(e) { parsedData[idx][k] = e.target.value; };
+      })(i, key));
+      td.appendChild(input);
+      tr.appendChild(td);
+    });
+
+    // 시간
+    var tdTime = document.createElement('td');
+    var inputTime = document.createElement('input');
+    inputTime.type = 'number';
+    inputTime.className = 'time-input';
+    inputTime.min = '5';
+    inputTime.max = '300';
+    inputTime.value = d.time;
+    inputTime.addEventListener('change', (function(idx) {
+      return function(e) {
+        var v = parseInt(e.target.value);
+        if (v < 5) v = 5;
+        if (v > 300) v = 300;
+        e.target.value = v;
+        parsedData[idx].time = v;
+      };
+    })(i));
+    tdTime.appendChild(inputTime);
+    tr.appendChild(tdTime);
+
+    // 정답
+    var tdA = document.createElement('td');
+    var inputA = document.createElement('input');
+    inputA.type = 'text';
+    inputA.className = 'answer-input';
+    inputA.value = String(d.answer);
+    inputA.addEventListener('change', (function(idx) {
+      return function(e) { parsedData[idx].answer = e.target.value; };
+    })(i));
+    tdA.appendChild(inputA);
+    tr.appendChild(tdA);
+
+    // 삭제
+    var tdDel = document.createElement('td');
+    var btnDel = document.createElement('button');
+    btnDel.className = 'delete-btn';
+    btnDel.textContent = '\u2715';
+    btnDel.title = '삭제';
+    btnDel.addEventListener('click', (function(idx) {
+      return function() { deleteRow(idx); };
+    })(i));
+    tdDel.appendChild(btnDel);
+    tr.appendChild(tdDel);
+
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('resultCard').style.display = 'block';
+  document.getElementById('emptyState').style.display = 'none';
+}
+
+function deleteRow(i) {
+  parsedData.splice(i, 1);
+  parsedData.forEach(function(d, idx) { d.num = idx + 1; });
+  renderTable();
+}
+
+function addEmptyRow() {
+  var defaultTime = parseInt(document.getElementById('defaultTime').value) || 20;
+  parsedData.push({ num: parsedData.length + 1, question: '', c1: '', c2: '', c3: '', c4: '', c5: '', time: defaultTime, answer: '' });
+  renderTable();
+  var wrap = document.querySelector('.table-wrap');
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function applyDefaultTime() {
+  var defaultTime = parseInt(document.getElementById('defaultTime').value) || 20;
+  parsedData.forEach(function(d) { d.time = defaultTime; });
+  renderTable();
+  showToast('모든 문제에 ' + defaultTime + '초가 적용되었습니다');
+}
+
+function downloadXLSX() {
+  if (parsedData.length === 0) { showToast('다운로드할 데이터가 없습니다'); return; }
+
+  // Blooket 템플릿 형식에 맞게 데이터 구성
+  var wsData = [];
+  // Row 1: 타이틀 (Blooket Import Template)
+  wsData.push(['Blooket\nImport Template', '', '', '', '', '', '', '', '', '']);
+  // Row 2: 헤더
+  wsData.push(['Question #', 'Question Text', 'Answer 1', 'Answer 2', 'Answer 3\n(Optional)', 'Answer 4\n(Optional)', 'Time Limit (sec)\n(Max: 300 seconds)', 'Correct Answer(s)\n(Only include Answer #)', '', 'Typing']);
+  // Row 3+: 데이터
+  parsedData.forEach(function(d) {
+    var time = d.time;
+    if (time < 5) time = 5;
+    if (time > 300) time = 300;
+    if (d.isShortAnswer) {
+      var correctNums = [];
+      if (d.c1) correctNums.push('1');
+      if (d.c2) correctNums.push('2');
+      if (d.c3) correctNums.push('3');
+      if (d.c4) correctNums.push('4');
+      wsData.push([d.num, d.question, d.c1, d.c2 || '', d.c3 || '', d.c4 || '', time, correctNums.join(','), '', 'typing']);
+    } else {
+      wsData.push([d.num, d.question, d.c1, d.c2, d.c3 || '', d.c4 || '', time, d.answer, '', '']);
+    }
+  });
+
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.aoa_to_sheet(wsData);
+
+  // 열 너비 설정
+  ws['!cols'] = [
+    { wch: 13 },   // A: Question #
+    { wch: 25 },   // B: Question Text
+    { wch: 13 },   // C: Answer 1
+    { wch: 13 },   // D: Answer 2
+    { wch: 13 },   // E: Answer 3
+    { wch: 13 },   // F: Answer 4
+    { wch: 13 },   // G: Time Limit
+    { wch: 13 },   // H: Correct Answer(s)
+    { wch: 5 },    // I: (unused)
+    { wch: 10 }    // J: Typing
+  ];
+
+  // 병합: A1:B1
+  ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 1 } }];
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+  XLSX.writeFile(wb, 'Blooket_Import_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+  showToast('Blooket XLSX 파일이 다운로드되었습니다');
+}
+
+function downloadCSV() {
+  if (parsedData.length === 0) { showToast('다운로드할 데이터가 없습니다'); return; }
+
+  var headers = ['Question #', 'Question Text', 'Answer 1', 'Answer 2', 'Answer 3', 'Answer 4', 'Time Limit (sec)', 'Correct Answer(s)', '', 'Typing'];
+  var rows = parsedData.map(function(d) {
+    // 단답형: 채워진 Answer 칸 번호를 모두 정답으로, J컬럼에 typing
+    if (d.isShortAnswer) {
+      var correctNums = [];
+      if (d.c1) correctNums.push('1');
+      if (d.c2) correctNums.push('2');
+      if (d.c3) correctNums.push('3');
+      if (d.c4) correctNums.push('4');
+      return [d.num, d.question, d.c1, d.c2 || '', d.c3 || '', d.c4 || '', d.time, correctNums.join(','), '', 'typing'];
+    }
+    return [d.num, d.question, d.c1, d.c2, d.c3 || '', d.c4 || '', d.time, d.answer, '', ''];
+  });
+
+  var csvContent = [headers].concat(rows)
+    .map(function(row) {
+      return row.map(function(cell) {
+        return '"' + String(cell).replace(/"/g, '""') + '"';
+      }).join(',');
+    })
+    .join('\n');
+
+  var bom = '\uFEFF';
+  var blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'Blooket_Import_' + new Date().toISOString().slice(0, 10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('CSV 파일이 다운로드되었습니다');
+}
+
+function clearInput() {
+  document.getElementById('inputText').value = '';
+  parsedData = [];
+  document.getElementById('resultCard').style.display = 'none';
+  document.getElementById('emptyState').style.display = 'block';
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 2500);
+}
+</script>
+
+</body>
+</html>
