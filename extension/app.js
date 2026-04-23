@@ -21,7 +21,7 @@ var CHOICE_PATTERNS = [
     indexFn: function(m) { return '\u3131\u3134\u3137\u3139\u3141'.indexOf(m[1]); }, textFn: function(m) { return m[2].trim(); } }
 ];
 
-var ANSWER_REGEX = /^(?:\uc815\ub2f5|\ub2f5|\ub2f5\uc548|answer|correct)\s*[:\uFF1A]\s*(.+?)\s*$/i;
+var ANSWER_REGEX = /^[\(\[]?(?:\uc815\ub2f5|\ub2f5|\ub2f5\uc548|answer|correct)\s*[:\uFF1A]\s*(.+?)[\)\]]?\s*$/i;
 var EXPLANATION_REGEX = /^(?:\ud574\uc124|\ud480\uc774|\uc124\uba85|explanation)\s*[:\uFF1A]/i;
 var QUESTION_NUM_REGEX = /^(?:(?:\ubb38\uc81c|Q|q|#|\u3010)\s*)?(\d{1,3})[\s]*[.\)\u3011:\s]/;
 
@@ -33,6 +33,7 @@ function preprocessLine(line) {
   s = s.replace(/^#{1,6}\s+/, '');
   s = s.replace(/\$\\rightarrow\$/g, '\u2192');
   s = s.replace(/\$[^$]*\$/g, '');
+  s = s.replace(/\[(?:\ub2e8\ub2f5\ud615|\uac1d\uad00\uc2dd|\uc8fc\uad00\uc2dd|\uc11c\uc220\ud615)\]\s*/g, '');
   return s;
 }
 
