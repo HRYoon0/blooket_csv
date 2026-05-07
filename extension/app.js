@@ -25,6 +25,44 @@ var ANSWER_REGEX = /^[\(\[]?(?:\uc815\ub2f5|\ub2f5|\ub2f5\uc548|answer|correct)\
 var EXPLANATION_REGEX = /^(?:\ud574\uc124|\ud480\uc774|\uc124\uba85|explanation)\s*[:\uFF1A]/i;
 var QUESTION_NUM_REGEX = /^(?:(?:\ubb38\uc81c|Q|q|#|\u3010)\s*)?(\d{1,3})[\s]*[.\)\u3011:\s]/;
 
+// 답안 섹션 헤더: [정답], 정답, ### 정답, [답안 (1~13)] 등
+var ANSWER_SECTION_REGEX = /^[\[\u3010\u300C]?(?:\uc815\ub2f5|\ub2f5\uc548)\s*(?:\([^)]*\))?[\]\u3011\u300D]?\s*$/;
+// 섹션 안의 답 라인: "1. ② 앨범" 또는 "1) A"
+var SECTION_ANSWER_REGEX = /^(\d{1,3})[.\)]\s*(.+)$/;
+
+// 한 줄에 여러 보기가 들어있을 때 분할
+function trySplitInlineChoices(line) {
+  var t = line.trim();
+  // 원문자: ① X  ② Y  ③ Z ... (반드시 ①~⑤로 시작 + 마커 2개 이상)
+  if (/^[\u2460\u2461\u2462\u2463\u2464]/.test(t)) {
+    var c = (t.match(/[\u2460\u2461\u2462\u2463\u2464]/g) || []).length;
+    if (c >= 2) {
+      var parts = t.split(/(?=[\u2460\u2461\u2462\u2463\u2464])/).map(function(p){return p.trim();}).filter(Boolean);
+      var choices = [];
+      parts.forEach(function(p){
+        var m = p.match(/^([\u2460\u2461\u2462\u2463\u2464])\s*(.+?)\s*$/);
+        if (m) choices['\u2460\u2461\u2462\u2463\u2464'.indexOf(m[1])] = m[2].trim();
+      });
+      return { choices: choices, type: 'circled' };
+    }
+  }
+  // 알파벳 인라인: A) X  B) Y  C) Z ... (반드시 A~E로 시작 + 마커 2개 이상)
+  if (/^[A-Ea-e][.)]/.test(t)) {
+    var ms = t.match(/(?:^|\s)[A-Ea-e][.)]/g);
+    if (ms && ms.length >= 2) {
+      var parts2 = t.split(/(?=(?:^|\s)[A-Ea-e][.)])/).map(function(p){return p.trim();}).filter(Boolean);
+      var choices2 = [];
+      parts2.forEach(function(p){
+        var m = p.match(/^([A-Ea-e])[.)]\s*(.+?)\s*$/);
+        if (m) choices2[m[1].toUpperCase().charCodeAt(0) - 65] = m[2].trim();
+      });
+      if (choices2.some(Boolean)) return { choices: choices2, type: 'alpha' };
+    }
+  }
+  return null;
+}
+
+
 function preprocessLine(line) {
   var s = line;
   s = s.replace(/^[\s]*>\s?/, '');
@@ -62,6 +100,8 @@ function parseQuestions() {
   var rawLines = text.split('\n');
   var questions = [];
   var currentQ = null;
+  var inAnswerSection = false;
+  var answerMap = {};
 
   for (var i = 0; i < rawLines.length; i++) {
     var raw = rawLines[i];
@@ -70,6 +110,19 @@ function parseQuestions() {
     if (!trimmed) continue;
     if (EXPLANATION_REGEX.test(trimmed)) continue;
     if (/^[\[\u3010\u300C].*(?:\ubb38\uc81c|\uc5f0\uc2b5|\ud3c9\uac00|\ub2e8\uc6d0).*[\]\u3011\u300D]\s*$/.test(trimmed)) continue;
+
+    // 답안 섹션 헤더 감지 → 모드 전환
+    if (ANSWER_SECTION_REGEX.test(trimmed)) {
+      if (currentQ) { questions.push(currentQ); currentQ = null; }
+      inAnswerSection = true;
+      continue;
+    }
+    // 답안 섹션 내부: "1. ② 앨범" 형식만 파싱
+    if (inAnswerSection) {
+      var sm = trimmed.match(SECTION_ANSWER_REGEX);
+      if (sm) answerMap[parseInt(sm[1])] = sm[2].trim();
+      continue;
+    }
 
     var answerMatch = trimmed.match(ANSWER_REGEX);
     if (answerMatch && currentQ) { currentQ.answerRaw = answerMatch[1].trim(); continue; }
@@ -80,6 +133,16 @@ function parseQuestions() {
       var afterNum = trimmed.replace(QUESTION_NUM_REGEX, '').trim();
       currentQ = { num: parseInt(qMatch[1]), question: afterNum, choices: [], answerRaw: '', choiceType: null };
       continue;
+    }
+
+    // 한 줄에 여러 보기가 있는 경우 먼저 분할 시도
+    if (currentQ && \!currentQ.choices.some(Boolean)) {
+      var inline = trySplitInlineChoices(trimmed);
+      if (inline) {
+        inline.choices.forEach(function(c, idx){ if (c) currentQ.choices[idx] = c; });
+        currentQ.choiceType = inline.type;
+        continue;
+      }
     }
 
     var choiceMatched = false;
@@ -101,6 +164,11 @@ function parseQuestions() {
     }
   }
   if (currentQ) questions.push(currentQ);
+
+  // 답안 섹션에서 수집한 답을 빈 문제에 적용
+  questions.forEach(function(q) {
+    if (\!q.answerRaw && answerMap[q.num]) q.answerRaw = answerMap[q.num];
+  });
 
   if (questions.length === 0) { showToast('\ubb38\uc81c\ub97c \ud30c\uc2f1\ud560 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4. \ud615\uc2dd\uc744 \ud655\uc778\ud574\uc8fc\uc138\uc694.'); return; }
 
