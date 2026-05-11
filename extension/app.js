@@ -136,7 +136,7 @@ function parseQuestions() {
     }
 
     // 한 줄에 여러 보기가 있는 경우 먼저 분할 시도
-    if (currentQ && \!currentQ.choices.some(Boolean)) {
+    if (currentQ && !currentQ.choices.some(Boolean)) {
       var inline = trySplitInlineChoices(trimmed);
       if (inline) {
         inline.choices.forEach(function(c, idx){ if (c) currentQ.choices[idx] = c; });
@@ -167,7 +167,7 @@ function parseQuestions() {
 
   // 답안 섹션에서 수집한 답을 빈 문제에 적용
   questions.forEach(function(q) {
-    if (\!q.answerRaw && answerMap[q.num]) q.answerRaw = answerMap[q.num];
+    if (!q.answerRaw && answerMap[q.num]) q.answerRaw = answerMap[q.num];
   });
 
   if (questions.length === 0) { showToast('\ubb38\uc81c\ub97c \ud30c\uc2f1\ud560 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4. \ud615\uc2dd\uc744 \ud655\uc778\ud574\uc8fc\uc138\uc694.'); return; }
