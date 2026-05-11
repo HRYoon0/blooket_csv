@@ -411,14 +411,14 @@
     </div>
 
     <div class="actions">
-      <button class="btn-primary" onclick="parseQuestions()">파싱하기</button>
+      <button class="btn-primary" onclick="parseQuestions()">추출하기</button>
       <button class="btn-outline" onclick="clearInput()">초기화</button>
     </div>
   </div>
 
   <div class="card" id="resultCard" style="display:none;">
     <h2>
-      파싱 결과
+      추출 결과
       <span class="badge" id="countBadge">0문제</span>
     </h2>
     <div class="stats" id="stats"></div>
@@ -451,7 +451,7 @@
 
   <div class="card" id="emptyState">
     <div class="empty-state">
-      <p>위 입력란에 문제를 붙여넣고 <strong>파싱하기</strong>를 눌러주세요</p>
+      <p>위 입력란에 문제를 붙여넣고 <strong>추출하기</strong>를 눌러주세요</p>
       <div class="supported-formats">
         <strong>지원하는 형식:</strong><br>
         번호: 1. / 1) / Q1 / 문제1 / **1.** 등<br>
@@ -615,7 +615,7 @@ function parseQuestions() {
       inAnswerSection = true;
       continue;
     }
-    // 답안 섹션 내부: "1. ② 앨범" 형식만 파싱
+    // 답안 섹션 내부: "1. ② 앨범" 형식만 추출
     if (inAnswerSection) {
       var sm = trimmed.match(SECTION_ANSWER_REGEX);
       if (sm) answerMap[parseInt(sm[1])] = sm[2].trim();
@@ -668,7 +668,7 @@ function parseQuestions() {
     if (!q.answerRaw && answerMap[q.num]) q.answerRaw = answerMap[q.num];
   });
 
-  if (questions.length === 0) { showToast('문제를 파싱할 수 없습니다. 형식을 확인해주세요.'); return; }
+  if (questions.length === 0) { showToast('문제를 추출할 수 없습니다. 형식을 확인해주세요.'); return; }
 
   parsedData = questions.map(function(q, i) {
     var hasChoices = q.choices.some(function(c) { return c; });
@@ -712,7 +712,7 @@ function parseQuestions() {
   });
 
   renderTable();
-  showToast(parsedData.length + '개 문제를 파싱했습니다');
+  showToast(parsedData.length + '개 문제를 추출했습니다');
 }
 
 function renderTable() {

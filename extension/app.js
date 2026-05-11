@@ -117,7 +117,7 @@ function parseQuestions() {
       inAnswerSection = true;
       continue;
     }
-    // 답안 섹션 내부: "1. ② 앨범" 형식만 파싱
+    // 답안 섹션 내부: "1. ② 앨범" 형식만 추출
     if (inAnswerSection) {
       var sm = trimmed.match(SECTION_ANSWER_REGEX);
       if (sm) answerMap[parseInt(sm[1])] = sm[2].trim();
@@ -170,7 +170,7 @@ function parseQuestions() {
     if (!q.answerRaw && answerMap[q.num]) q.answerRaw = answerMap[q.num];
   });
 
-  if (questions.length === 0) { showToast('\ubb38\uc81c\ub97c \ud30c\uc2f1\ud560 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4. \ud615\uc2dd\uc744 \ud655\uc778\ud574\uc8fc\uc138\uc694.'); return; }
+  if (questions.length === 0) { showToast('\ubb38\uc81c\ub97c \ucd94\ucd9c\ud560 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4. \ud615\uc2dd\uc744 \ud655\uc778\ud574\uc8fc\uc138\uc694.'); return; }
 
   parsedData = questions.map(function(q, i) {
     var hasChoices = q.choices.some(function(c) { return c; });
@@ -189,7 +189,7 @@ function parseQuestions() {
   });
 
   renderTable();
-  showToast(parsedData.length + '\uac1c \ubb38\uc81c\ub97c \ud30c\uc2f1\ud588\uc2b5\ub2c8\ub2e4');
+  showToast(parsedData.length + '\uac1c \ubb38\uc81c\ub97c \ucd94\ucd9c\ud588\uc2b5\ub2c8\ub2e4');
 }
 
 function renderTable() {
