@@ -1,21 +1,70 @@
 var parsedData = [];
 
-// LLM에 보낼 표준 prompt 생성
-function buildPromptTemplate(grade, count, difficulty) {
+// LLM에 보낼 표준 prompt 생성 (객관식 N + 단답형 M, 0이면 해당 부분 제외)
+function buildPromptTemplate(grade, choiceCount, shortCount, difficulty) {
   grade = (grade || '중3').trim();
-  count = parseInt(count) || 10;
+  choiceCount = Math.max(0, parseInt(choiceCount) || 0);
+  shortCount = Math.max(0, parseInt(shortCount) || 0);
   difficulty = (difficulty || '중간').trim();
-  return '다음 자료를 바탕으로 ' + grade + ' 수준의 ' + difficulty + ' 난이도 객관식 문제 ' + count + '개를 만들어주세요. 반드시 아래 형식을 정확히 따라주세요.\n\n[출력 형식]\n1. 문제 텍스트\nA) 보기 1\nB) 보기 2\nC) 보기 3\nD) 보기 4\n정답: A\n\n[규칙]\n- 각 문제는 빈 줄로 구분\n- 보기는 A) B) C) D) 형식만 사용 (①②③④, 1)2)3)4) 금지)\n- 정답은 "정답: X" 형식 (X는 A/B/C/D)\n- 마크다운 볼드(**), 인용(>), 구분선(---) 사용 금지\n- 해설/풀이 추가 금지\n- 단답형이 필요하면 보기 없이: "1. 문제\\n정답: 답텍스트"';
+
+  // 문항 수가 둘 다 0이면 객관식 10개로 fallback
+  if (choiceCount === 0 && shortCount === 0) choiceCount = 10;
+
+  // 요청 문장
+  var parts = [];
+  if (choiceCount > 0) parts.push('객관식 ' + choiceCount + '개');
+  if (shortCount > 0) parts.push('단답형 ' + shortCount + '개');
+  var ask = parts.join('와 ');
+
+  var lines = [];
+  lines.push('다음 자료를 바탕으로 ' + grade + ' 수준의 ' + difficulty + ' 난이도 문제를 만들어주세요. ' + ask + '로 구성해주세요. 반드시 아래 형식을 정확히 따라주세요.');
+  lines.push('');
+
+  if (choiceCount > 0) {
+    lines.push('[객관식 형식]');
+    lines.push('1. 문제 텍스트');
+    lines.push('A) 보기 1');
+    lines.push('B) 보기 2');
+    lines.push('C) 보기 3');
+    lines.push('D) 보기 4');
+    lines.push('정답: A');
+    lines.push('');
+  }
+  if (shortCount > 0) {
+    lines.push('[단답형 형식]');
+    lines.push((choiceCount > 0 ? (choiceCount + 1) : 1) + '. 문제 텍스트');
+    lines.push('정답: 답텍스트');
+    lines.push('');
+  }
+
+  lines.push('[규칙]');
+  lines.push('- 각 문제는 빈 줄로 구분');
+  if (choiceCount > 0) {
+    lines.push('- 객관식 보기는 A) B) C) D) 형식만 사용 (①②③④, 1)2)3)4) 금지)');
+    lines.push('- 객관식 정답은 "정답: X" 형식 (X는 A/B/C/D)');
+  }
+  if (shortCount > 0) {
+    lines.push('- 단답형은 보기 없이 문제와 "정답: 답텍스트"만 작성');
+  }
+  if (choiceCount > 0 && shortCount > 0) {
+    lines.push('- 객관식을 먼저, 단답형을 나중에 출력하고 문항 번호는 연속');
+  }
+  lines.push('- 마크다운 볼드(**), 인용(>), 구분선(---) 사용 금지');
+  lines.push('- 해설/풀이 추가 금지');
+
+  return lines.join('\n');
 }
 
 // 입력 필드에서 값을 읽어 prompt 복사
 function copyPromptFromInputs() {
   var grade = document.getElementById('promptGrade');
-  var count = document.getElementById('promptCount');
+  var choiceCount = document.getElementById('promptChoiceCount');
+  var shortCount = document.getElementById('promptShortCount');
   var diff = document.getElementById('promptDifficulty');
   var prompt = buildPromptTemplate(
     grade ? grade.value : '',
-    count ? count.value : '10',
+    choiceCount ? choiceCount.value : '10',
+    shortCount ? shortCount.value : '0',
     diff ? diff.value : ''
   );
   if (navigator.clipboard && navigator.clipboard.writeText) {

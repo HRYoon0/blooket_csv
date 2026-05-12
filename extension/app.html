@@ -52,7 +52,7 @@
   .format-hint { display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap; }
   .format-tag { font-size: 12px; padding: 4px 12px; background: #e0f7fa; color: #006064; border-radius: 100px; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; } .format-tag:hover { background: #b2ebf2; border-color: var(--blooket); }
   @media (max-width: 768px) { .container { padding: 16px 12px; } header h1 { font-size: 22px; } .stats { gap: 16px; } .actions { flex-direction: column; } button { width: 100%; justify-content: center; } }
-  .prompt-fields { display: grid; grid-template-columns: 1fr 100px 140px; gap: 12px; align-items: end; margin-bottom: 12px; }
+  .prompt-fields { display: grid; grid-template-columns: 1.4fr 100px 100px 130px; gap: 12px; align-items: end; margin-bottom: 12px; }
   .prompt-fields .field { display: flex; flex-direction: column; gap: 4px; }
   .prompt-fields .field label { color: var(--text-muted); font-size: 12px; font-weight: 600; }
   .prompt-fields input, .prompt-fields select { padding: 8px 10px; border: 2px solid var(--border); border-radius: 6px; font-size: 14px; font-family: inherit; color: var(--text); background: white; }
@@ -78,8 +78,12 @@
         <input type="text" id="promptGrade" value="중3 영어" placeholder="예: 중3 영어, 고2 한국사">
       </div>
       <div class="field">
-        <label>문항 수</label>
-        <input type="number" id="promptCount" value="10" min="1" max="50">
+        <label>객관식 수</label>
+        <input type="number" id="promptChoiceCount" value="10" min="0" max="50">
+      </div>
+      <div class="field">
+        <label>단답형 수</label>
+        <input type="number" id="promptShortCount" value="0" min="0" max="50">
       </div>
       <div class="field">
         <label>난이도</label>
