@@ -129,10 +129,16 @@ function parseQuestions() {
 
     var qMatch = trimmed.match(QUESTION_NUM_REGEX);
     if (qMatch) {
-      if (currentQ) questions.push(currentQ);
-      var afterNum = trimmed.replace(QUESTION_NUM_REGEX, '').trim();
-      currentQ = { num: parseInt(qMatch[1]), question: afterNum, choices: [], answerRaw: '', choiceType: null };
-      continue;
+      var qNum = parseInt(qMatch[1]);
+      // 숫자) 형식이고 현재 문제의 다음 보기 번호와 일치하면 → 보기로 처리 (fall through)
+      var looksLikeChoice = /^\s*\d{1,2}\)/.test(trimmed);
+      var filledCount = currentQ ? currentQ.choices.filter(Boolean).length : 0;
+      if (!(looksLikeChoice && currentQ && qNum === filledCount + 1 && qNum <= 5)) {
+        if (currentQ) questions.push(currentQ);
+        var afterNum = trimmed.replace(QUESTION_NUM_REGEX, '').trim();
+        currentQ = { num: qNum, question: afterNum, choices: [], answerRaw: '', choiceType: null };
+        continue;
+      }
     }
 
     // 한 줄에 여러 보기가 있는 경우 먼저 분할 시도
