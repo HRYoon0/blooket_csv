@@ -67,4 +67,7 @@ document.addEventListener('DOMContentLoaded', function() {
   btnOpenFull.addEventListener('click', function() {
     chrome.tabs.create({ url: chrome.runtime.getURL('app.html') });
   });
+
+  var btnCopyPrompt = document.getElementById('btnCopyPrompt');
+  if (btnCopyPrompt) btnCopyPrompt.addEventListener('click', copyPromptFromInputs);
 });

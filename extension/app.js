@@ -1,5 +1,34 @@
 var parsedData = [];
 
+// LLM에 보낼 표준 prompt 생성
+function buildPromptTemplate(grade, count, difficulty) {
+  grade = (grade || '중3').trim();
+  count = parseInt(count) || 10;
+  difficulty = (difficulty || '중간').trim();
+  return '다음 자료를 바탕으로 ' + grade + ' 수준의 ' + difficulty + ' 난이도 객관식 문제 ' + count + '개를 만들어주세요. 반드시 아래 형식을 정확히 따라주세요.\n\n[출력 형식]\n1. 문제 텍스트\nA) 보기 1\nB) 보기 2\nC) 보기 3\nD) 보기 4\n정답: A\n\n[규칙]\n- 각 문제는 빈 줄로 구분\n- 보기는 A) B) C) D) 형식만 사용 (①②③④, 1)2)3)4) 금지)\n- 정답은 "정답: X" 형식 (X는 A/B/C/D)\n- 마크다운 볼드(**), 인용(>), 구분선(---) 사용 금지\n- 해설/풀이 추가 금지\n- 단답형이 필요하면 보기 없이: "1. 문제\\n정답: 답텍스트"';
+}
+
+// 입력 필드에서 값을 읽어 prompt 복사
+function copyPromptFromInputs() {
+  var grade = document.getElementById('promptGrade');
+  var count = document.getElementById('promptCount');
+  var diff = document.getElementById('promptDifficulty');
+  var prompt = buildPromptTemplate(
+    grade ? grade.value : '',
+    count ? count.value : '10',
+    diff ? diff.value : ''
+  );
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(prompt).then(function() {
+      showToast('Prompt가 복사되었습니다. LLM에 붙여넣고 자료를 추가하세요!');
+    }, function() {
+      showToast('복사 실패. 다시 시도해주세요.');
+    });
+  } else {
+    showToast('이 브라우저는 자동 복사를 지원하지 않습니다.');
+  }
+}
+
 var SAMPLES = {
   abc: '1. \ub2e4\uc74c \uc911 HTTP \uc0c1\ud0dc \ucf54\ub4dc 404\uc758 \uc758\ubbf8\ub294?\nA) \uc11c\ubc84 \uc624\ub958\nB) \uad8c\ud55c \uc5c6\uc74c\nC) \ud398\uc774\uc9c0\ub97c \ucc3e\uc744 \uc218 \uc5c6\uc74c\nD) \uc694\uccad \uc131\uacf5\n\uc815\ub2f5: C\n\n2. \uac1d\uccb4\uc9c0\ud5a5 \ud504\ub85c\uadf8\ub798\ubc0d\uc758 4\ub300 \ud2b9\uc131\uc774 \uc544\ub2cc \uac83\uc740?\nA) \uce21\uc194\ud654\nB) \uc0c1\uc18d\nC) \ucef4\ud30c\uc77c\nD) \ub2e4\ud615\uc131\n\uc815\ub2f5: C',
   circled: '1. TCP/IP \ubaa8\ub378\uc758 \uacc4\uce35\uc774 \uc544\ub2cc \uac83\uc740?\n\u2460 \uc751\uc6a9 \uacc4\uce35\n\u2461 \uc804\uc1a1 \uacc4\uce35\n\u2462 \uc138\uc158 \uacc4\uce35\n\u2463 \ub124\ud2b8\uc6cc\ud06c \uacc4\uce35\n\uc815\ub2f5: \u2462\n\n2. \ub370\uc774\ud130\ubca0\uc774\uc2a4 \uc815\uaddc\ud654\uc758 \ubaa9\uc801\uc73c\ub85c \uac00\uc7a5 \uc801\uc808\ud55c \uac83\uc740?\n\u2460 \ub370\uc774\ud130 \uc911\ubcf5 \ucd5c\uc18c\ud654\n\u2461 \uac80\uc0c9 \uc18d\ub3c4 \ud5a5\uc0c1\n\u2462 \uc800\uc7a5 \uacf5\uac04 \ud655\ub300\n\u2463 \ubcf4\uc548 \uac15\ud654\n\uc815\ub2f5: \u2460',
@@ -384,4 +413,5 @@ document.addEventListener('DOMContentLoaded', function() {
   bind('btnXLSX', downloadXLSX);
   bind('btnAddRow', addEmptyRow);
   bind('btnApplyTime', applyDefaultTime);
+  bind('btnCopyPrompt', copyPromptFromInputs);
 });

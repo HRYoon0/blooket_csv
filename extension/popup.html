@@ -43,6 +43,18 @@
   .result .preview .type-short { background: #fef3c7; color: #92400e; }
 
   .toast { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%) translateY(60px); background: #1e293b; color: white; padding: 8px 16px; border-radius: 6px; font-size: 12px; opacity: 0; transition: all 0.3s; z-index: 100; } .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+  .prompt-box { margin-bottom: 10px; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; background: #fafafa; }
+  .prompt-box > summary { cursor: pointer; font-size: 12px; font-weight: 700; color: var(--blooket); list-style: none; }
+  .prompt-box > summary::-webkit-details-marker { display: none; }
+  .prompt-box[open] > summary { margin-bottom: 8px; }
+  .prompt-fields { display: grid; grid-template-columns: 1fr 70px 90px; gap: 6px; align-items: end; font-size: 11px; }
+  .prompt-fields .field { display: flex; flex-direction: column; gap: 2px; }
+  .prompt-fields .field label { color: var(--muted); font-size: 10px; }
+  .prompt-fields input, .prompt-fields select { padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px; font-family: inherit; color: var(--text); background: white; }
+  .prompt-fields input:focus, .prompt-fields select:focus { outline: none; border-color: var(--blooket); }
+  .btn-copy-prompt { width: 100%; margin-top: 8px; padding: 6px 0; background: var(--blooket); color: white; border: none; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .btn-copy-prompt:hover { background: var(--hover); }
 </style>
 </head>
 <body>
@@ -53,6 +65,29 @@
   </header>
   <p class="author">제작자: 경남 황산초등학교 교사 윤희류</p>
   <p class="tip">LLM에게 문제를 요청할 때 <strong>정답도 함께 출력</strong>해달라고 하세요. (예: "정답: ③")</p>
+
+  <details class="prompt-box" open>
+    <summary>📋 LLM Prompt 만들기 (펼치기/접기)</summary>
+    <div class="prompt-fields">
+      <div class="field">
+        <label>학년/과목</label>
+        <input type="text" id="promptGrade" value="중3 영어" placeholder="예: 중3 영어">
+      </div>
+      <div class="field">
+        <label>문항 수</label>
+        <input type="number" id="promptCount" value="10" min="1" max="50">
+      </div>
+      <div class="field">
+        <label>난이도</label>
+        <select id="promptDifficulty">
+          <option>쉬움</option>
+          <option selected>중간</option>
+          <option>어려움</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn-copy-prompt" id="btnCopyPrompt">📋 Prompt 복사</button>
+  </details>
 
   <textarea id="inputText" placeholder="LLM이 생성한 문제를 붙여넣으세요.
 

@@ -388,6 +388,30 @@
   </header>
 
   <div class="card">
+    <h2>📋 LLM Prompt 만들기</h2>
+    <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px; line-height:1.5;">학년/문항수/난이도를 정하고 <strong>Prompt 복사</strong>를 누르세요. 복사된 prompt를 ChatGPT/Gemini/NotebookLM 등에 붙여넣고 자료를 추가하면 일관된 형식으로 문제가 생성됩니다.</p>
+    <div style="display:grid; grid-template-columns:1fr 100px 140px; gap:12px; align-items:end; margin-bottom:12px;">
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <label style="color:var(--text-muted); font-size:12px; font-weight:600;">학년/과목</label>
+        <input type="text" id="promptGrade" value="중3 영어" placeholder="예: 중3 영어, 고2 한국사" style="padding:8px 10px; border:2px solid var(--border); border-radius:6px; font-size:14px;">
+      </div>
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <label style="color:var(--text-muted); font-size:12px; font-weight:600;">문항 수</label>
+        <input type="number" id="promptCount" value="10" min="1" max="50" style="padding:8px 10px; border:2px solid var(--border); border-radius:6px; font-size:14px;">
+      </div>
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <label style="color:var(--text-muted); font-size:12px; font-weight:600;">난이도</label>
+        <select id="promptDifficulty" style="padding:8px 10px; border:2px solid var(--border); border-radius:6px; font-size:14px; background:white;">
+          <option>쉬움</option>
+          <option selected>중간</option>
+          <option>어려움</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="copyPromptFromInputs()">📋 Prompt 복사</button>
+  </div>
+
+  <div class="card">
     <h2>텍스트 입력</h2>
     <textarea id="inputText" placeholder="여기에 LLM이 생성한 문제를 붙여넣으세요.
 
@@ -471,6 +495,34 @@
 
 <script>
 var parsedData = [];
+
+// LLM에 보낼 표준 prompt 생성
+function buildPromptTemplate(grade, count, difficulty) {
+  grade = (grade || '중3').trim();
+  count = parseInt(count) || 10;
+  difficulty = (difficulty || '중간').trim();
+  return '다음 자료를 바탕으로 ' + grade + ' 수준의 ' + difficulty + ' 난이도 객관식 문제 ' + count + '개를 만들어주세요. 반드시 아래 형식을 정확히 따라주세요.\n\n[출력 형식]\n1. 문제 텍스트\nA) 보기 1\nB) 보기 2\nC) 보기 3\nD) 보기 4\n정답: A\n\n[규칙]\n- 각 문제는 빈 줄로 구분\n- 보기는 A) B) C) D) 형식만 사용 (①②③④, 1)2)3)4) 금지)\n- 정답은 "정답: X" 형식 (X는 A/B/C/D)\n- 마크다운 볼드(**), 인용(>), 구분선(---) 사용 금지\n- 해설/풀이 추가 금지\n- 단답형이 필요하면 보기 없이: "1. 문제\\n정답: 답텍스트"';
+}
+
+function copyPromptFromInputs() {
+  var grade = document.getElementById('promptGrade');
+  var count = document.getElementById('promptCount');
+  var diff = document.getElementById('promptDifficulty');
+  var prompt = buildPromptTemplate(
+    grade ? grade.value : '',
+    count ? count.value : '10',
+    diff ? diff.value : ''
+  );
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(prompt).then(function() {
+      showToast('Prompt가 복사되었습니다. LLM에 붙여넣고 자료를 추가하세요!');
+    }, function() {
+      showToast('복사 실패. 다시 시도해주세요.');
+    });
+  } else {
+    showToast('이 브라우저는 자동 복사를 지원하지 않습니다.');
+  }
+}
 
 var SAMPLES = {
   abc: '1. 다음 중 HTTP 상태 코드 404의 의미는?\nA) 서버 오류\nB) 권한 없음\nC) 페이지를 찾을 수 없음\nD) 요청 성공\n정답: C\n\n2. 객체지향 프로그래밍의 4대 특성이 아닌 것은?\nA) 캡슐화\nB) 상속\nC) 컴파일\nD) 다형성\n정답: C',
